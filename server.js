@@ -40,6 +40,8 @@ app.get("/", (req, res) => {
   res.send("Health Check Okay");
 });
 
+// Fetch Employees
+
 app.get("/api/v1/employees", (req, res) => {
   const query = "SELECT * FROM business_keyspace.employees";
   client.execute(query, (err, result) => {
@@ -51,6 +53,8 @@ app.get("/api/v1/employees", (req, res) => {
   });
 });
 
+// Fetch Suppliers
+
 app.get("/api/v1/suppliers", (req, res) => {
   const query = "SELECT * FROM business_keyspace.suppliers";
   client.execute(query, (err, result) => {
@@ -61,6 +65,8 @@ app.get("/api/v1/suppliers", (req, res) => {
     res.json(result.rows);
   });
 });
+
+// Fetch Products
 
 app.get("/api/v1/products", (req, res) => {
   const query = "SELECT * FROM business_keyspace.retail_items";
