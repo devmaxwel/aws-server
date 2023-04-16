@@ -4,6 +4,7 @@ const cassandra = require("cassandra-driver");
 const cors = require("cors");
 const fs = require("fs");
 const dotenv = require("dotenv");
+const bcrypt = require("bcrypt");
 dotenv.config();
 
 let auth = new cassandra.auth.PlainTextAuthProvider(
@@ -88,6 +89,47 @@ app.get("/api/v1/customers", (req, res) => {
     }
     res.json(result.rows);
   });
+});
+
+app.post("/api/v1/create-login", async (req, res) => {
+  const { email, password } = req.body;
+  let salt = await bcrypt.genSalt(12);
+  let hashedPassword = await bcrypt.hash(password, salt);
+
+  const query = `INSERT INTO business_keyspace.admin_login(email, password) VALUES('${email}', '${hashedPassword}')`;
+
+  client.execute(
+    query,
+    [],
+    { consistency: cassandra.types.consistencies.localQuorum },
+    (err, result) => {
+      if (err) {
+        return res.status(404).json({ msg: err });
+      }
+      res.json(result.rows);
+    }
+  );
+});
+
+app.post("/api/v1/login", async (req, res) => {
+  const { email, password } = req.body;
+  const query = `SELECT password FROM business_keyspace.admin_login WHERE email = '${email}'`;
+  client.execute(
+    query,
+    [],
+    { consistency: cassandra.types.consistencies.localQuorum },
+    async (err, result) => {
+      if (err) {
+        return res.status(404).json({ msg: err });
+      }
+      const hashedPassword = result.rows[0].password;
+      const isMatch = await bcrypt.compare(password, hashedPassword);
+      if (!isMatch) {
+        return res.status(404).json({ msg: "Invalid Credentials" });
+      }
+      res.json({ msg: "Login Successful" });
+    }
+  );
 });
 
 const PORT = 4500;
