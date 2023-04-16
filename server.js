@@ -79,6 +79,17 @@ app.get("/api/v1/products", (req, res) => {
   });
 });
 
+app.get("/api/v1/customers", (req, res) => {
+  const query = "SELECT * FROM business_keyspace.customers";
+  client.execute(query, (err, result) => {
+    if (err) {
+      console.log(err);
+      return res.status(404).json({ msg: err });
+    }
+    res.json(result.rows);
+  });
+});
+
 const PORT = 4500;
 app.listen(PORT, async () => {
   console.log(`Server is running on port ${PORT}`);
