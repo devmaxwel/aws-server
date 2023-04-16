@@ -91,72 +91,7 @@ app.get("/api/v1/customers", (req, res) => {
   });
 });
 
-app.post("/api/v1/create-login", async (req, res) => {
-  const { email, password } = req.body;
 
-  // Check if email already exists in database
-  const checkQuery = `SELECT email FROM business_keyspace.admin_login WHERE email = '${email}'`;
-  client.execute(
-    checkQuery,
-    [],
-    { consistency: cassandra.types.consistencies.localQuorum },
-    async (err, result) => {
-      if (err) {
-        return res.status(404).json({ msg: err });
-      }
-      if (result.rows.length > 0) {
-        return res.status(409).json({ msg: "Email already exists" });
-      }
-
-      // Email does not exist, insert new record
-      let salt = await bcrypt.genSalt(12);
-      let hashedPassword = await bcrypt.hash(password, salt);
-
-      const insertQuery = `INSERT INTO business_keyspace.admin_login(email, password) VALUES('${email}', '${hashedPassword}')`;
-
-      client.execute(
-        insertQuery,
-        [],
-        { consistency: cassandra.types.consistencies.localQuorum },
-        (err, result) => {
-          if (err) {
-            return res.status(404).json({ msg: err });
-          }
-          res.json(result.rows);
-        }
-      );
-    }
-  );
-});
-
-app.post("/api/v1/login", async (req, res) => {
-  const { email, password } = req.body;
-  const query = `SELECT * FROM business_keyspace.admin_login WHERE email = '${email}'`;
-  client.execute(
-    query,
-    [],
-    { consistency: cassandra.types.consistencies.localQuorum },
-    async (err, result) => {
-      if (err) {
-        return res.status(404).json({ msg: err });
-      }
-      const hashedPassword = result.rows[0].password;
-      const isMatch = await bcrypt.compare(password, hashedPassword);
-      if (!isMatch) {
-        return res.status(404).json({ msg: "Invalid Credentials" });
-      }
-      const user = {
-        id: result.rows[0].id,
-        email: result.rows[0].email,
-        // add any other fields you want to return
-      };
-      res.json({
-        user: user,
-        msg: "Login Successful",
-      });
-    }
-  );
-});
 
 const PORT = 4500;
 app.listen(PORT, async () => {
